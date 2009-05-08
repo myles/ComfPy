@@ -1,20 +1,29 @@
-.. ComfPy documentation master file, created by
-   sphinx-quickstart on Fri May  8 15:42:20 2009.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. _
 
-Welcome to ComfPy's documentation!
-==================================
+ComfPy
+======
 
-Contents:
+ComfPy (Comfy Couch Python) is a Python_ library for working with
+CouchDB_.
 
+Requirements
+------------
+
+* Python_ 2.4 or later.
+* setuptools_
+* simplejson_
+* httplib2_
+
+Contents
+--------
 .. toctree::
-   :maxdepth: 2
+	:maxdepth: 2
+	
+	api/index
+	tools/index
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
-
+.. _CouchDB: http://couchdb.apache.org/
+.. _Python: http://python.org/
+.. _setuptools: http://pypi.python.org/pypi/setuptools
+.. _httplib2: http://code.google.com/p/httplib2/
+.. _simplejson: http://code.google.com/p/simplejson/

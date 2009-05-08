@@ -9,5 +9,5 @@ setup(
 	author = "Myles Braithwaite",
 	packages = find_packages('src'),
 	package_dir = {'': 'src'},
-	install_requires = ['setuptools', 'simplejson'],
+	install_requires = ['setuptools', 'simplejson', 'httplib2'],
 )
