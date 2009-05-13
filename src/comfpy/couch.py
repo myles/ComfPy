@@ -5,14 +5,18 @@ class Couch(object):
 	:param host: The URL to the CouchDB host.
 	:param port: The Port that CouchDB is running on.
 	"""
-	def __init__(self, host='127.0.0.1', port=5984, options=None):
+	def __init__(self, host='127.0.0.1', port=5984, ssl=False):
 		self.host = host
 		self.port = port
+		self.ssl = ssl
 	
 	def _connect(self):
 		"""Connect to the CouchDB server.
 		"""
-		return httplib.HTTPConnection(self.host, self.port)
+		if self.ssl:
+			return httplib.HTTPConnection(self.host, self.port)
+		else:
+			return httplib.HTTPConnection(self.host, self.port)
 	
 	# Database operations
 	

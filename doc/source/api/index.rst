@@ -2,3 +2,8 @@
 
 API
 ===
+
+.. toctree::
+	:glob:
+	
+	*

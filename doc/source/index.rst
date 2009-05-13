@@ -12,7 +12,6 @@ Requirements
 * Python_ 2.4 or later.
 * setuptools_
 * simplejson_
-* httplib2_
 
 Contents
 --------
