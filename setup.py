@@ -13,7 +13,7 @@ setup(
 	packages = find_packages('src'),
 	package_dir = {'': 'src'},
 	
-	install_requires = ['setuptools', 'simplejson'],
+	install_requires = ['setuptools', 'simplejson', 'httplib2'],
 	
 	classifiers = [
 		'Intended Audience :: Developers',

@@ -31,10 +31,10 @@ class TestCouch(unittest.TestCase):
 		r = self.couch.save_document('test_comfpy', {'test1': 'test1', 'test2': 'test2'}, 'test1')
 		self.assertEqual(r['ok'], True)
 	
-	# def test_delete_document(self):
-	# 	self.couch.create_document('test_comfpy', {'test1': 'test1'}, 'test1')
-	# 	rev = self.couch.open_document('test_comfpy', 'test1')['_rev']
-	# 	self.couch.delete_document('test_comfpy', 'test1', rev)
+	def test_delete_document(self):
+		self.couch.create_document('test_comfpy', {'test1': 'test1'}, 'test1')
+		rev = self.couch.open_document('test_comfpy', 'test1')['_rev']
+		self.couch.delete_document('test_comfpy', 'test1', rev)
 
 def test_suite():
 	return unittest.makeSuite(TestCouch)

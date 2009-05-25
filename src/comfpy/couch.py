@@ -1,22 +1,35 @@
-import simplejson, httplib, urllib
+import urllib, base64, string
+
+import simplejson
+import httplib2
 
 class Couch(object):
 	"""
 	:param host: The URL to the CouchDB host.
-	:param port: The Port that CouchDB is running on.
+	:param port: The port that CouchDB is running on.
+	:param ssl: Is CouchDB running on a secure connection?
+	:type ssl: bool
 	"""
-	def __init__(self, host='127.0.0.1', port=5984, ssl=False):
+	def __init__(self, host='http://127.0.0.1:5984', username=None, password=None):
 		self.host = host
-		self.port = port
-		self.ssl = ssl
+		self.username = username
+		self.password = password
 	
 	def _connect(self):
 		"""Connect to the CouchDB server.
 		"""
-		if self.ssl:
-			return httplib.HTTPConnection(self.host, self.port)
-		else:
-			return httplib.HTTPConnection(self.host, self.port)
+		h = httplib2.Http()
+		if self.username and self.password:
+			h.add_credentials(self.username, self.password)
+		
+		return h
+	
+	def _http(self, path, method, headers={}, body=None):
+		c = self._connect()
+		return c.request('%s%s' % (self.host, path),
+			method,
+			headers=headers,
+			body=body)
 	
 	# Database operations
 	
@@ -26,12 +39,9 @@ class Couch(object):
 		:return: A list of database names.
 		:rtype: list
 		"""
-		c = self._connect()
 		headers = { "Accept": "application/json" }
-		c.request("GET", '/_all_dbs', None, headers)
-		r = c.getresponse()
-		json = r.read()
-		return simplejson.loads(json)
+		response, content = self._http('/_all_dbs', "GET", headers=headers)
+		return simplejson.loads(content)
 	
 	def create_database(self, db_name):
 		"""Create a database.
@@ -40,13 +50,11 @@ class Couch(object):
 		:return: If suessfuly will return { "ok": True }
 		:rtype: dict
 		"""
-		c = self._connect()
-		uri = ''.join([ '/', db_name, '/' ])
-		c.request("PUT", uri, None)
-		r = c.getresponse()
-		if r.status == 201:
+		url = ''.join([ '/', db_name, '/' ])
+		response, content = self._http(url, "PUT")
+		if response.status == 201:
 			return True
-		elif r.status == 412:
+		elif response.status == 412:
 			return False # TODO Raise an exception instead.
 		else:
 			return False # TODO Raise an exception instead.
@@ -58,13 +66,11 @@ class Couch(object):
 		:return: If suessfuly will return { "ok": True }
 		:rtype: dict
 		"""
-		c = self._connect()
-		uri = ''.join([ '/', db_name, '/'])
-		c.request("DELETE", uri, None)
-		r = c.getresponse()
-		if r.status == 200:
+		url = ''.join([ '/', db_name, '/'])
+		response, content = self._http(url, "DELETE")
+		if response.status == 200:
 			return True
-		elif r.status == 404:
+		elif response.status == 404:
 			return False # TODO Raise an exception instead.
 		else:
 			return False # TODO Raise an exception instead.
@@ -76,15 +82,12 @@ class Couch(object):
 		:return: update_seq, disk_size, doc_count, compact_running, db_name, doc_del_count
 		:rtype: dict
 		"""
-		c = self._connect()
-		uri = ''.join([ '/', db_name, '/'])
-		c.request("GET", uri, None)
-		r = c.getresponse()
-		if r.status == 404:
+		url = ''.join([ '/', db_name, '/'])
+		response, content = self._http(url, "GET")
+		if response.status == 404:
 			return False # TODO Raise an exception instead.
 		
-		json = r.read()
-		return simplejson.loads(json)
+		return simplejson.loads(content)
 	
 	# Document operations
 	
@@ -94,13 +97,10 @@ class Couch(object):
 		:param db_name: The name of the database.
 		:rtype: list
 		"""
-		c = self._connect()
 		headers = { "Accept": "application/json" }
-		uri = ''.join([ '/', db_name, '/' , '_all_docs' ])
-		c.request("GET", uri, None, headers)
-		r = c.getresponse()
-		json = r.read()
-		return simplejson.loads(json)
+		url = ''.join([ '/', db_name, '/' , '_all_docs' ])
+		response, content = self._http(url, "GET", headers=headers)
+		return simplejson.loads(content)
 	
 	def open_document(self, db_name, doc_id, doc_rev=None):
 		"""Opens a document within the database.
@@ -112,24 +112,21 @@ class Couch(object):
 		:return: The document.
 		:rtype: dict
 		"""
-		c = self._connect()
 		headers = { "Accept": "application/json" }
 		
 		if doc_rev:
 			params = urllib.urlencode({'rev': doc_rev})
-			uri = ''.join([ '/', db_name, '/', doc_id, '?', params ])
+			url = ''.join([ '/', db_name, '/', doc_id, '?', params ])
 		else:
 			params = None
-			uri = ''.join([ '/', db_name, '/', doc_id ])
+			url = ''.join([ '/', db_name, '/', doc_id ])
 		
-		c.request("GET", uri, None, headers)
-		r = c.getresponse()
+		response, content = self._http(url, "GET", headers=headers)
 		
-		if r.status == 404:
+		if response.status == 404:
 			return False # TODO Raise an exception instead.
 		
-		json = r.read()
-		return simplejson.loads(json)
+		return simplejson.loads(content)
 	
 	def save_document(self, db_name, body, doc_id):
 		"""Saves an existing document in the database.
@@ -141,20 +138,17 @@ class Couch(object):
 		:return: {"ok": true, "id": "some_doc_id", "rev": "946B7D1C"}
 		:rtype: dict
 		"""
-		c = self._connect()
 		headers = { "Content-type": "application/json" }
-		uri = ''.join([ '/', db_name, '/', doc_id ])
+		url = ''.join([ '/', db_name, '/', doc_id ])
 		
 		json = simplejson.dumps(body)
 		
-		c.request("PUT", uri, json, headers)
-		r = c.getresponse()
+		response, content = self._http(url, "PUT", body=json, headers=headers)
 		
-		if r.status == 412:
+		if response.status == 412:
 			return False # TODO Raise an exception instead.
 		
-		json = r.read()
-		return simplejson.loads(json)
+		return simplejson.loads(content)
 	
 	def create_document(self, db_name, body, doc_id=None):
 		"""Creates a document in the database.
@@ -166,34 +160,34 @@ class Couch(object):
 		:return: {"ok": true, "id": "some_doc_id", "rev": "946B7D1C"}
 		:rtype: dict
 		"""
-		c = self._connect()
 		headers = { "Content-type": "application/json" }
 		
 		json = simplejson.dumps(body)
 		
 		if doc_id:
-			uri = ''.join([ '/', db_name, '/', doc_id ])
-			c.request("PUT", uri, json, headers)
+			url = ''.join([ '/', db_name, '/', doc_id ])
+			response, content = self._http(url, "PUT", body=json, headers=headers)
 		else:
-			uri = ''.join([ '/', db_name, '/' ])
-			c.request("POST", uri, json, headers)
+			url = ''.join([ '/', db_name, '/' ])
+			response, content = self._http(url, "POST", body=json, headers=headers)
 		
-		r = c.getresponse()
-		
-		if r.status == 412:
+		if response.status == 412:
 			return False # TODO Raise an exception instead.
 		
-		json = r.read()
-		return simplejson.loads(json)
+		return simplejson.loads(content)
 	
 	def delete_document(self, db_name, doc_id, doc_rev):
-		"""Deletes a document in the database."""
-		c = self._connect()
+		"""Deletes a document in the database.
+		
+		:param db_name:
+		:param doc_id: 
+		:param doc_rev:
+		"""
 		params = urllib.urlencode({'rev': doc_rev})
-		uri = ''.join([ '/', db_name, '/', doc_id, '?', params ])
-		c.request("DELETE", uri, None, None)
-		r = c.getresponse()
-		if r.status == 200:
+		url = ''.join([ '/', db_name, '/', doc_id, '?', params ])
+		response, content = self._http(url, "DELETE")
+		
+		if response.status == 200:
 			return True
 		else:
 			return False # TODO Raise an exception instead.
