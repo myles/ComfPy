@@ -1,3 +1,19 @@
+"""
+Copyright 2009 Myles Braithwaite <me@mylesbraithwaite.com
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+"""
+
 import urllib, base64, string
 
 import simplejson
@@ -5,10 +21,8 @@ import httplib2
 
 class Couch(object):
 	"""
-	:param host: The URL to the CouchDB host.
-	:param port: The port that CouchDB is running on.
-	:param ssl: Is CouchDB running on a secure connection?
-	:type ssl: bool
+	:param host: The full URI to the CouchDB host.
+	:params username password: The username and password to login.
 	"""
 	def __init__(self, host='http://127.0.0.1:5984', username=None, password=None):
 		self.host = host
